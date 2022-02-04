@@ -19,6 +19,9 @@ def loadImgs():
     for p in pieces:
         images[p] = pygame.transform.scale(pygame.image.load("images/"+p+".png"),(sqSize,sqSize))
 
+
+
+
 def drawGs(screen,gs):
     """
     Ritar all grafik för den nuvarande positionen på skärmen
@@ -27,14 +30,20 @@ def drawGs(screen,gs):
     drawPieces(screen, gs.board)
 
 def drawSq(screen):
-    colors = [pygame.Color("gray"),pygame.Color("black")]
+    colors = [pygame.Color("gray"),pygame.Color("dark gray")]
     for r in range(dim):
         for c in range(dim):
             color = (r+c)%2
             pygame.draw.rect(screen, colors[color], pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
 
 def drawPieces(screen,board):
-    pass
+    for r in range(dim):
+        for c in range(dim):
+            piece = board[r][c]
+            if piece != "--": 
+                screen.blit(images[piece],pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
+
+
 
 
 def main():
