@@ -26,7 +26,12 @@ class gameState ():
             self.board[lastMove.startR][lastMove.startC] = lastMove.piceMoved 
             self.board[lastMove.endR][lastMove.endC] = lastMove.caputerdPiece
             self.whiteMove = not self.whiteMove
-            
+
+    def getValidMoves(self):
+        pass
+
+    def getAllMoves(self):
+        pass     
 
 
 class Move(): 
