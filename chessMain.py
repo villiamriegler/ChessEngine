@@ -1,10 +1,11 @@
 import pygame 
 from chessEngine import *
 
+
 #Skärm variabler 
 width = height = 512
 dim = 8 
-sqSize = width / dim 
+sqSize = width//dim 
 maxFps = 24 
 
 #Dict för alla pjäser så att de slipper laddas fler gånger 
@@ -47,17 +48,44 @@ def drawPieces(screen,board):
 
 
 def main():
+    #initialisation 
     pygame.init()
     screen = pygame.display.set_mode((width,height))
     clock = pygame.time.Clock()
     screen.fill(pygame.Color("white"))
     gs = gameState()
     loadImgs() #Gör bara en gång 
-    run = True 
+
+    #variabler till spelloopen 
+    run = True
+    sqSelected = ()
+    playerClicks = [] 
     while run: 
         for e in pygame.event.get():
             if e.type == pygame.QUIT: 
                 run = False
+
+            elif e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_z:
+                    gs.undoMove()
+                    
+            elif e.type == pygame.MOUSEBUTTONDOWN:
+                mouseLocation = pygame.mouse.get_pos()
+                c = mouseLocation[0]//sqSize
+                r = mouseLocation[1]//sqSize
+                if sqSelected == (r,c):
+                    sqSelected = ()
+                    playerClicks = []
+                else: 
+                    sqSelected = (r,c)
+                    playerClicks.append(sqSelected)
+                if len(playerClicks) == 2: 
+                    move = Move(playerClicks[0], playerClicks[1], gs.board)
+                    print(move.getChessNot())
+                    gs.makeMove(move)
+                    sqSelected = ()
+                    playerClicks = []
+
         drawGs(screen, gs)
         clock.tick(maxFps)
         pygame.display.flip()
