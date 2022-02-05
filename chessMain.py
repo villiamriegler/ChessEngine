@@ -23,19 +23,22 @@ def loadImgs():
 
 
 
-def drawGs(screen,gs):
+def drawGs(screen,gs,sqSelected):
     """
     Ritar all grafik för den nuvarande positionen på skärmen
     """
-    drawSq(screen)
+    drawSq(screen,sqSelected,gs)
     drawPieces(screen, gs.board)
 
-def drawSq(screen):
+def drawSq(screen,sqSelected,gs):
     colors = [pygame.Color("gray"),pygame.Color("dark gray")]
     for r in range(dim):
         for c in range(dim):
             color = (r+c)%2
-            pygame.draw.rect(screen, colors[color], pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
+            if sqSelected == (r,c):
+                pygame.draw.rect(screen, pygame.Color("red"), pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))  
+            else: 
+                pygame.draw.rect(screen, colors[color], pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
 
 def drawPieces(screen,board):
     for r in range(dim):
@@ -53,22 +56,28 @@ def main():
     screen = pygame.display.set_mode((width,height))
     clock = pygame.time.Clock()
     screen.fill(pygame.Color("white"))
+    
     gs = gameState()
-    loadImgs() #Gör bara en gång 
+    validMoves = gs.getValidMoves()
+    moveMade = False
+     
 
-    #variabler till spelloopen 
+    #variabler till spelloopen
+    loadImgs() #Gör bara en gång 
     run = True
     sqSelected = ()
     playerClicks = [] 
     while run: 
         for e in pygame.event.get():
+            #Kryssa ner spelet
             if e.type == pygame.QUIT: 
                 run = False
-
+            #undo move
             elif e.type == pygame.KEYDOWN:
                 if e.key == pygame.K_z:
                     gs.undoMove()
-                    
+                    moveMade = True
+            #Flyttar en pjäs        
             elif e.type == pygame.MOUSEBUTTONDOWN:
                 mouseLocation = pygame.mouse.get_pos()
                 c = mouseLocation[0]//sqSize
@@ -81,12 +90,18 @@ def main():
                     playerClicks.append(sqSelected)
                 if len(playerClicks) == 2: 
                     move = Move(playerClicks[0], playerClicks[1], gs.board)
-                    print(move.getChessNot())
-                    gs.makeMove(move)
+                    if move in validMoves:
+                        gs.makeMove(move)
+                        moveMade = True
                     sqSelected = ()
                     playerClicks = []
+        
+        
+        if moveMade:
+            validMoves = gs.getValidMoves()  
+            moveMade = False  
 
-        drawGs(screen, gs)
+        drawGs(screen,gs,sqSelected)
         clock.tick(maxFps)
         pygame.display.flip()
 
