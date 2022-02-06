@@ -1,4 +1,5 @@
 
+from re import T
 from shutil import move
 
 
@@ -22,6 +23,8 @@ class gameState ():
         #Keeping tack of kings for checks, pins, stalemates and, checkmates
         self.wKLoc = (7,4) #Starting positions
         self.bKLoc = (0,4)
+        self.checkMate = False
+        self.staleMate = False
 
     """
     Function for moving a piece from one location to the next [doesn't check if move is valid at all]
@@ -38,6 +41,12 @@ class gameState ():
         self.moveLog.append(move)
         self.whiteMove = not self.whiteMove
 
+        #uppdating location of kings
+        if (move.piceMoved == "wK"):
+            self.wKLoc = (move.endR,move.endC)
+        elif (move.piceMoved == "bK"):
+            self.bKLoc = (move.endR,move.endC)
+
     """
     Function for unding the last move
         uses the self.moveLog to replace a captured piece and place back the caputing piece 
@@ -51,8 +60,62 @@ class gameState ():
             self.board[lastMove.endR][lastMove.endC] = lastMove.caputerdPiece
             self.whiteMove = not self.whiteMove
 
+        #uppdating location of kings
+        if (lastMove.piceMoved == "wK"):
+            self.wKLoc = (lastMove.startR,lastMove.startC)
+        elif (lastMove.piceMoved == "bK"):
+            self.bKLoc = (lastMove.startR,lastMove.startC)
+
+    """
+    All moves considering checks, pins and so on
+    """
     def getValidMoves(self):
-        return self.getAllMoves()
+        moves = self.getAllMoves() #Getting all possible moves
+        for i in range(len(moves)-1,-1,-1): #looping thru moves backwards 
+            self.makeMove(moves[i]) #foreach move, make the move
+            self.whiteMove = not self.whiteMove #swapping turns because we made a move
+            if (self.inCheck()):
+                moves.remove(moves[i]) #if they attack your king it is not a valid move
+            
+            #undoing what we changed
+            self.whiteMove = not self.whiteMove
+            self.undoMove()
+
+        if (len(moves) == 0): #either checkmate or stalemate
+            if (self.inCheck()):
+                self.checkMate = True
+                print("checkmate")
+            else:
+                self.staleMate = True
+                print("stalemate")
+        else: #in case we undo a checkmate or stalemate
+            self.checkMate = False
+            self.staleMate = False
+            
+        return moves
+
+    """
+    Check if current player is in check
+    """
+    def inCheck(self):
+        if (self.whiteMove): #checking if the square under attack is the white of black king
+            return self.sqUnderAttack(self.wKLoc[0],self.wKLoc[1])
+        else: 
+            return self.sqUnderAttack(self.bKLoc[0],self.bKLoc[1])
+
+    """
+    Check if the enemy can attack (r,c)
+    """
+    def sqUnderAttack(self,r,c):
+        self.whiteMove = not self.whiteMove #switching turns 
+        opponentMoves = self.getAllMoves()
+        for move in opponentMoves:
+            if (move.endR == r and move.endC == c): #checking if the square is under attack
+                self.whiteMove = not self.whiteMove #switching back moves
+                return True
+            
+        self.whiteMove = not self.whiteMove
+        return False
 
     """
     Gets all valid moves acording to how the pieces are alowed to move [ignores checks, pins and so on]
