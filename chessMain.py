@@ -31,13 +31,18 @@ def drawGs(screen,gs,sqSelected):
 
 def drawSq(screen,sqSelected,gs):
     colors = [pygame.Color("gray"),pygame.Color("dark gray")]
+    moves = gs.getValidMoves()
     for r in range(dim): #loop for drawing the background and highligting pressed pieces
         for c in range(dim):
             color = (r+c)%2
             if sqSelected == (r,c):
-                pygame.draw.rect(screen, pygame.Color("red"), pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize)) 
-            else: 
+                pygame.draw.rect(screen, pygame.Color("green"), pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
+            else:
                 pygame.draw.rect(screen, colors[color], pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
+    if len(sqSelected) > 0: #Draws all valid moves     
+        for m in moves: 
+            if m.startR == sqSelected[0] and m.startC == sqSelected[1]:
+                pygame.draw.rect(screen, pygame.Color("light green"), pygame.Rect(m.endC*sqSize,m.endR*sqSize,sqSize,sqSize))   
 
 def drawPieces(screen,board):
     for r in range(dim): #Draws all the pieces on the board
@@ -45,8 +50,6 @@ def drawPieces(screen,board):
             piece = board[r][c]
             if piece != "--": 
                 screen.blit(images[piece],pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
-
-
 
 
 def main():
@@ -98,7 +101,7 @@ def main():
         
         
         if moveMade: #if a valid move was made get all new moves
-            validMoves = gs.getValidMoves()  
+            validMoves = gs.getValidMoves()
             moveMade = False  
 
         #Draws the screen
