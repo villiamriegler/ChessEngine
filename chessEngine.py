@@ -25,6 +25,9 @@ class gameState ():
         self.checkMate = False
         self.staleMate = False
 
+        #en passant
+        self.enpassandt = () #coords for sq where en passant is possible
+
     """
     Function for moving a piece from one location to the next [doesn't check if move is valid at all]
         Args: Move object containing starting pos and ending pos and the pieces already on those squares
@@ -50,6 +53,15 @@ class gameState ():
         if move.isPawnProm:
             self.board[move.endR][move.endC] = move.piceMoved[0] + "Q"
 
+        #En Passant
+        if move.isEnpassantMove:
+            self.board[move.startR][move.endC] = "--" #capturing the pawn
+        if move.piceMoved[1] == "P" and abs(move.startR - move.endR) == 2: #uppdate enpassant variable 
+            self.enpassandt = ((move.startR + move.endR)//2 , move.endC)
+        else:
+            self.enpassandt = ()
+
+
     """
     Function for unding the last move
         uses the self.moveLog to replace a captured piece and place back the caputing piece 
@@ -69,10 +81,22 @@ class gameState ():
         elif (lastMove.piceMoved == "bK"):
             self.bKLoc = (lastMove.startR,lastMove.startC)
 
+        #en passant 
+        if lastMove.isEnpassantMove:
+            self.board[lastMove.endR][lastMove.endC] = "--"
+            self.board[lastMove.startR][lastMove.endC] = lastMove.caputerdPiece
+            self.enpassandt = (lastMove.endR,lastMove.endC)
+        #undo a 2 sq pawn advance 
+        if lastMove.piceMoved[1] == "P" and abs(lastMove.startR - lastMove.endR) == 2:
+            self.enpassandt = ()
+
+
+
     """
     All moves considering checks, pins and so on
     """
     def getValidMoves(self):
+        _enpassant = self.enpassandt
         moves = self.getAllMoves() #Getting all possible moves
         for i in range(len(moves)-1,-1,-1): #looping thru moves backwards 
             self.makeMove(moves[i]) #foreach move, make the move
@@ -94,7 +118,9 @@ class gameState ():
         else: #in case we undo a checkmate or stalemate
             self.checkMate = False
             self.staleMate = False
-            
+
+        self.enpassandt = _enpassant
+
         return moves
 
     """
@@ -162,9 +188,13 @@ class gameState ():
             if (c-1 >= 0): 
                 if (self.board[r-1][c-1][0] == "b"):
                     moves.append(Move((r,c),((r-1),(c-1)),self.board))
+                elif ((r-1,c-1) == self.enpassandt): #logic for enpassant captures
+                    moves.append(Move((r,c),((r-1),(c-1)),self.board,enpassantPossible=True))
             if(c+1 <= 7):
                 if (self.board[r-1][c+1][0] == "b"):
                     moves.append(Move((r,c),((r-1),(c+1)),self.board))
+                elif ((r-1,c+1) == self.enpassandt):
+                    moves.append(Move((r,c),((r-1),(c+1)),self.board,enpassantPossible=True))
         
         else: #black pawn moves
             if (self.board[r+1][c]=="--"):
@@ -174,9 +204,13 @@ class gameState ():
             if (c-1>=0):
                 if (self.board[r+1][c-1][0]=="w"):
                     moves.append(Move((r,c),(r+1,c-1),self.board))
+                elif ((r+1,c-1) == self.enpassandt):
+                    moves.append(Move((r,c),((r+1),(c-1)),self.board,enpassantPossible=True))
             if (c+1<=7):
                 if (self.board[r+1][c+1][0]=="w"):
                     moves.append(Move((r,c),(r+1,c+1),self.board))
+                elif ((r+1,c+1) == self.enpassandt):
+                    moves.append(Move((r,c),((r+1),(c+1)),self.board,enpassantPossible=True))
 
     def getRookMoves(self,r,c,moves,dir=((1,0),(0,1),(-1,0),(0,-1))):
         #defining the oposposing teams color
@@ -241,7 +275,7 @@ class Move():
     filestoCol = {"A":0,"B":1,"C":2,"D":3,"E":4,"F":5,"G":6,"H":7}
     colstoFiles = {v:k for k, v in filestoCol.items()}
 
-    def __init__(self,sSq,eSq,board):
+    def __init__(self,sSq,eSq,board,enpassantPossible = False):
         #start and end pos of the move
         self.startR = sSq[0]
         self.startC = sSq[1]
@@ -256,6 +290,13 @@ class Move():
         self.isPawnProm = False
         if (self.piceMoved == "wP" and self.endR == 0) or (self.piceMoved == "bP" and self.endR == 7):
             self.isPawnProm = True
+
+        #En passant
+        self.isEnpassantMove = False
+        if (enpassantPossible):
+            self.isEnpassantMove = True
+        if self.isEnpassantMove:
+            self.caputerdPiece = "wP" if self.piceMoved == "bP" else "bP"
         
         #Id for the move (maybe useful for recreating old positions in the future)
         self.moveID = self.startR * 1000 + self.startC * 100 + self.endR * 10 + self.endC
