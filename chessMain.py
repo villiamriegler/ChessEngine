@@ -96,8 +96,10 @@ def main():
                     if move in validMoves: #checks if the move is vaild 
                         gs.makeMove(move)
                         moveMade = True
-                    sqSelected = () #emptys the click variables 
-                    playerClicks = []
+                        sqSelected = () #emptys the click variables 
+                        playerClicks = []
+                    else: 
+                        playerClicks = [sqSelected]
         
         
         if moveMade: #if a valid move was made get all new moves
