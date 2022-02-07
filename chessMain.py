@@ -95,13 +95,13 @@ def main():
                     move = Move(playerClicks[0], playerClicks[1], gs.board) #definging the move
                     for i in range(len(validMoves)):
                         if move == validMoves[i]: #checks if the move is vaild 
-                            gs.makeMove(move)
+                            gs.makeMove(validMoves[i])
                             moveMade = True
                             sqSelected = () #emptys the click variables 
                             playerClicks = []
-                    else: 
+                    if not moveMade:
                         playerClicks = [sqSelected]
-        
+                     
         
         if moveMade: #if a valid move was made get all new moves
             validMoves = gs.getValidMoves()
