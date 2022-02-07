@@ -46,6 +46,10 @@ class gameState ():
         elif (move.piceMoved == "bK"):
             self.bKLoc = (move.endR,move.endC)
 
+        #Pawn Promotion
+        if move.isPawnProm:
+            self.board[move.endR][move.endC] = move.piceMoved[0] + "Q"
+
     """
     Function for unding the last move
         uses the self.moveLog to replace a captured piece and place back the caputing piece 
@@ -247,6 +251,11 @@ class Move():
         #effected pieces by the move
         self.piceMoved = board[self.startR][self.startC]
         self.caputerdPiece = board[self.endR][self.endC]
+
+        #Pawn promotions
+        self.isPawnProm = False
+        if (self.piceMoved == "wP" and self.endR == 0) or (self.piceMoved == "bP" and self.endR == 7):
+            self.isPawnProm = True
         
         #Id for the move (maybe useful for recreating old positions in the future)
         self.moveID = self.startR * 1000 + self.startC * 100 + self.endR * 10 + self.endC
