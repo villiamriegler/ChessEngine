@@ -93,11 +93,12 @@ def main():
                     playerClicks.append(sqSelected)
                 if len(playerClicks) == 2: #if there are two clicks in player clicks, do a move 
                     move = Move(playerClicks[0], playerClicks[1], gs.board) #definging the move
-                    if move in validMoves: #checks if the move is vaild 
-                        gs.makeMove(move)
-                        moveMade = True
-                        sqSelected = () #emptys the click variables 
-                        playerClicks = []
+                    for i in range(len(validMoves)):
+                        if move == validMoves[i]: #checks if the move is vaild 
+                            gs.makeMove(move)
+                            moveMade = True
+                            sqSelected = () #emptys the click variables 
+                            playerClicks = []
                     else: 
                         playerClicks = [sqSelected]
         
