@@ -9,13 +9,12 @@ dim = 8
 sqSize = width//dim 
 maxFps = 24 
 
+"""
+Loads all images and saves them in a dictionary 
+"""
 #Dict för alla pjäser så att de slipper laddas fler gånger 
 images = {}
-
 def loadImgs(): 
-    """
-    loads all images and saves them in a dictionary 
-    """
     pieces = ["wR","wN","wB","wQ","wK","wB","wN","wR","bR","bN","bB","bQ","bK","bB","bN","bR","wP","bP"]
 
     for p in pieces:
@@ -25,24 +24,17 @@ def loadImgs():
 """
 Ritar all grafik för den nuvarande positionen på skärmen
 """
-def drawGs(screen,gs,sqSelected):
-    drawSq(screen,sqSelected,gs)
+def drawGs(screen,gs,sqSelected,validMoves):
+    drawSq(screen)
+    hightlightSq(screen,validMoves,sqSelected,gs)
     drawPieces(screen, gs.board)
 
-def drawSq(screen,sqSelected,gs):
+def drawSq(screen):
     colors = [pygame.Color("gray"),pygame.Color("dark gray")]
-    moves = gs.getValidMoves()
     for r in range(dim): #loop for drawing the background and highligting pressed pieces
         for c in range(dim):
             color = (r+c)%2
-            if sqSelected == (r,c):
-                pygame.draw.rect(screen, pygame.Color("green"), pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
-            else:
-                pygame.draw.rect(screen, colors[color], pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
-    if len(sqSelected) > 0: #Draws all valid moves     
-        for m in moves: 
-            if m.startR == sqSelected[0] and m.startC == sqSelected[1]:
-                pygame.draw.rect(screen, pygame.Color("light green"), pygame.Rect(m.endC*sqSize,m.endR*sqSize,sqSize,sqSize))   
+            pygame.draw.rect(screen, colors[color], pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
 
 def drawPieces(screen,board):
     for r in range(dim): #Draws all the pieces on the board
@@ -50,6 +42,49 @@ def drawPieces(screen,board):
             piece = board[r][c]
             if piece != "--": 
                 screen.blit(images[piece],pygame.Rect(c*sqSize,r*sqSize,sqSize,sqSize))
+
+
+def hightlightSq(screen,validMoves,sqSelected,gs):  
+    if sqSelected != ():
+        r,c = sqSelected
+        if gs.board[r][c][0] == ("w" if gs.whiteMove else "b"): #only highlights if it's the right pice to move
+            s = pygame.Surface((sqSize,sqSize))
+            s.set_alpha(255)
+            s.fill(pygame.Color("green"))
+            screen.blit(s,(c*sqSize,r*sqSize)) #highlights selected square
+            for m in validMoves: #highlights valid moves
+                if m.startR == sqSelected[0] and m.startC == sqSelected[1]:
+                    s.fill(pygame.Color("light green"))
+                    screen.blit(s,(m.endC*sqSize,m.endR*sqSize))
+
+
+"""
+Handeling player input
+"""
+def playerMove(gs,validMoves,sqSelected,playerClicks = []):
+    mouseLocation = pygame.mouse.get_pos() #gets mouse location on screen and converts to rows and columns
+    c = mouseLocation[0]//sqSize
+    r = mouseLocation[1]//sqSize
+    if sqSelected == (r,c): #If the same square clicked twice cancel the move 
+        sqSelected = ()
+        playerClicks.clear()
+        return (False,sqSelected)
+    else: #Appending the second click 
+        sqSelected = (r,c)
+        playerClicks.append(sqSelected)
+    if len(playerClicks) == 2: #if there are two clicks in player clicks, do a move 
+        move = Move(playerClicks[0], playerClicks[1], gs.board) #definging the move
+        for i in range(len(validMoves)):
+            if move == validMoves[i]: #checks if the move is vaild 
+                gs.makeMove(validMoves[i])
+                sqSelected = () #emptys the click variables 
+                playerClicks.clear()
+                return (True,sqSelected)
+        
+        playerClicks.clear()
+        playerClicks = [sqSelected]
+        sqSelected = ()
+    return (False,sqSelected)
 
 
 def main():
@@ -63,13 +98,11 @@ def main():
     gs = gameState()
     validMoves = gs.getValidMoves()
     moveMade = False
+    sqSelected = ()
      
-
     #variabler till spelloopen
     loadImgs() #Gör bara en gång 
     run = True
-    sqSelected = () #Piece about to be moved 
-    playerClicks = [] 
     while run: 
         for e in pygame.event.get(): #loop for getting event handelers
             #Kryssa ner spelet
@@ -82,33 +115,17 @@ def main():
                     moveMade = True
             #Flyttar en pjäs        
             elif e.type == pygame.MOUSEBUTTONDOWN:
-                mouseLocation = pygame.mouse.get_pos() #gets mouse location on screen and converts to rows and columns
-                c = mouseLocation[0]//sqSize
-                r = mouseLocation[1]//sqSize
-                if sqSelected == (r,c): #If the same square clicked twice cancel the move 
-                    sqSelected = ()
-                    playerClicks = []
-                else: #Appending the second click 
-                    sqSelected = (r,c)
-                    playerClicks.append(sqSelected)
-                if len(playerClicks) == 2: #if there are two clicks in player clicks, do a move 
-                    move = Move(playerClicks[0], playerClicks[1], gs.board) #definging the move
-                    for i in range(len(validMoves)):
-                        if move == validMoves[i]: #checks if the move is vaild 
-                            gs.makeMove(validMoves[i])
-                            moveMade = True
-                            sqSelected = () #emptys the click variables 
-                            playerClicks = []
-                    if not moveMade:
-                        playerClicks = [sqSelected]
-                     
+                moveandsq = playerMove(gs,validMoves,sqSelected)
+                moveMade = moveandsq[0]
+                sqSelected = moveandsq[1]   
         
         if moveMade: #if a valid move was made get all new moves
             validMoves = gs.getValidMoves()
-            moveMade = False  
+            moveMade = False 
+            sqSelected = () 
 
         #Draws the screen
-        drawGs(screen,gs,sqSelected)
+        drawGs(screen,gs,sqSelected,validMoves)
         clock.tick(maxFps)
         pygame.display.flip()
 
