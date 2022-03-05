@@ -1,6 +1,8 @@
 from math import fabs
+from urllib.request import HTTPPasswordMgrWithDefaultRealm
 import pygame 
 from chessEngine import *
+from ChessAI import *
 
 
 #Skärm variabler 
@@ -100,12 +102,17 @@ def main():
     moveMade = False
     sqSelected = ()
      
+    #variables for AI movement
+    human = True
+    Ai = False
+
     #variabler till spelloopen
     loadImgs() #Gör bara en gång 
     run = True
-    while run: 
+    while run:
+        humanTurn = (gs.whiteMove and human) or (not gs.whiteMove and Ai) 
         for e in pygame.event.get(): #loop for getting event handelers
-            #Kryssa ner spelet
+            #Exit the game
             if e.type == pygame.QUIT: 
                 run = False
             #undo move
@@ -113,12 +120,19 @@ def main():
                 if e.key == pygame.K_z:
                     gs.undoMove()
                     moveMade = True
-            #Flyttar en pjäs        
+            #Moves a piece        
             elif e.type == pygame.MOUSEBUTTONDOWN:
-                moveandsq = playerMove(gs,validMoves,sqSelected)
-                moveMade = moveandsq[0]
-                sqSelected = moveandsq[1]   
-        
+                if humanTurn:
+                    moveandsq = playerMove(gs,validMoves,sqSelected)
+                    moveMade = moveandsq[0]
+                    sqSelected = moveandsq[1]  
+
+        #Ai Move finder 
+        if not humanTurn and (len(validMoves) > 0):
+            aiMove = findRandMove(validMoves)
+            gs.makeMove(aiMove)
+            moveMade = True
+            
         if moveMade: #if a valid move was made get all new moves
             validMoves = gs.getValidMoves()
             moveMade = False 
