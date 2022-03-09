@@ -129,7 +129,10 @@ def main():
 
         #Ai Move finder 
         if not humanTurn and (len(validMoves) > 0):
-            aiMove = findRandMove(validMoves)
+            aiMove = findMove(gs,validMoves)
+            if aiMove == None:
+                aiMove = findRandMove(validMoves)
+
             gs.makeMove(aiMove)
             moveMade = True
             
