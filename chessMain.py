@@ -129,7 +129,7 @@ def main():
 
         #Ai Move finder 
         if not humanTurn and (len(validMoves) > 0):
-            aiMove = findMove(gs,validMoves)
+            aiMove = findBestMove(gs,validMoves)
             if aiMove == None:
                 aiMove = findRandMove(validMoves)
 
@@ -145,6 +145,7 @@ def main():
         drawGs(screen,gs,sqSelected,validMoves)
         clock.tick(maxFps)
         pygame.display.flip()
+
 
 if __name__ == "__main__":
     main()

@@ -72,7 +72,7 @@ class gameState ():
                 self.board[move.endR][move.endC+1] = "--"
             else: #queen side castle
                 self.board[move.endR][move.endC+1] = self.board[move.endR][move.endC-2]
-                self.board[move.endR][move.endC-2] == "--"
+                self.board[move.endR][move.endC-2] = "--"
 
         #uppdate casteling rights
         self.updateCastleRights(move)
@@ -108,9 +108,9 @@ class gameState ():
             self.enpassandt = ()
 
         #casteling
-        self.castleRightsLog.pop() #get rid of new castlerights 
-        self.currentCastleRights = self.castleRightsLog[-1] #set current castlerights to the new last of the list
-
+        self.currentCastleRights = self.castleRightsLog[len(self.castleRightsLog)-1] #set current castlerights to the new last of the list
+        self.castleRightsLog.pop(-1) #get rid of new castlerights 
+        
         #undo castle move
         if lastMove.castle:
             if lastMove.endC - lastMove.startC == 2: #kingside
@@ -119,6 +119,9 @@ class gameState ():
             else:
                 self.board[lastMove.endR][lastMove.endC-2] = self.board[lastMove.endR][lastMove.endC+1]
                 self.board[lastMove.endR][lastMove.endC+1] = "--"
+
+        self.checkMate = False
+        self.staleMate = False
 
     def updateCastleRights(self,move):
         if move.piceMoved == "wK":
