@@ -59,7 +59,7 @@ Helper to make first recursive call to findMinMaxMove
 def findBestMove(gs,validMoves):
     global nextMove
     nextMove = None
-    findMinMaxMove(gs,validMoves,gs.whiteMove,DEPTH)
+    findNegaMaxMoveAlphaBeta(gs,validMoves,DEPTH,-Checkmate,Checkmate,1 if gs.whiteMove else -1)
     return nextMove
 
 def findMinMaxMove(gs,validMoves,whiteMove,depth):
@@ -92,6 +92,59 @@ def findMinMaxMove(gs,validMoves,whiteMove,depth):
                     nextMove = m
             gs.undoMove()
         return minScore
+
+def findNegaMaxMove(gs,validMoves,depth,turnMultip):
+    global nextMove
+    if depth == 0:
+       return turnMultip * scoreBoard(gs)
+
+    maxscore = -Checkmate
+    for m in validMoves:
+        gs.makeMove(m)
+        nextMoves = gs.getValidMoves()
+        score = -findNegaMaxMove(gs, nextMoves, depth-1,-turnMultip)
+        if score > maxscore:
+            maxscore = score
+            if depth == DEPTH:
+                nextMove = m
+        gs.undoMove()
+
+    return maxscore
+
+def findNegaMaxMoveAlphaBeta(gs,validMoves,depth,alpha,beta,turnMultip):
+    global nextMove
+    if depth == 0:
+       return turnMultip * scoreBoard(gs)
+
+
+    #move oredering - implement
+    #validMoves = moveOrder(validMoves)
+
+    maxscore = -Checkmate
+    for m in validMoves:
+        gs.makeMove(m)
+        nextMoves = gs.getValidMoves()
+        score = -findNegaMaxMoveAlphaBeta(gs, nextMoves, depth-1,-beta,-alpha,-turnMultip)
+        if score > maxscore:
+            maxscore = score
+            if depth == DEPTH:
+                nextMove = m
+        gs.undoMove()
+
+        #pruning
+        if maxscore > alpha:
+            alpha = maxscore
+        if alpha >= beta:
+            break
+
+    return maxscore
+
+#def moveOrder(moves):
+    #for m in moves:
+        #if m.caputerdPiece != "--":
+           #moves.remove(m)
+           #moves.insert(0, m)
+        #elif  
 
 def scoreBoard(gs):  
     #white wants as big a number as possible and vice versa
