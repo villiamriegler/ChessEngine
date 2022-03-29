@@ -104,7 +104,7 @@ def main():
      
     #variables for AI movement
     human = True
-    Ai = False
+    Ai = True
 
     #variabler till spelloopen
     loadImgs() #Gör bara en gång 

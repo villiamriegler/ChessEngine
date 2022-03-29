@@ -22,6 +22,9 @@ class gameState ():
         #Keeping tack of kings for checks, pins, stalemates and, checkmates
         self.wKLoc = (7,4) #Starting positions
         self.bKLoc = (0,4)
+        self.inCheck = False
+        self.pins = []
+        self.checks = []
         self.checkMate = False
         self.staleMate = False
 
@@ -149,40 +152,103 @@ class gameState ():
     All moves considering checks, pins and so on
     """
     def getValidMoves(self):
-        _enpassant = self.enpassandt
-        _castle = CastleRights(self.currentCastleRights.wks,self.currentCastleRights.bks,
-                                                    self.currentCastleRights.wqs,self.currentCastleRights.bqs) #copy current casteling rights
-        moves = self.getAllMoves() #Getting all possible moves
+        moves = []
+        self.inCheck , self.pins, self.checks = self.checkPinsAndChecks()
         if self.whiteMove:
-            self.getCastleMoves(self.wKLoc[0],self.wKLoc[1],moves)
+            kr = self.wKLoc[0]
+            kc = self.wKLoc[1]
         else:
-            self.getCastleMoves(self.bKLoc[0],self.bKLoc[1],moves)
+            kr = self.bKLoc[0]
+            kc = self.bKLoc[1]
+        if self.inCheck:
+            if len(self.checks) == 1:
+                moves = self.getAllMoves()
+                c = self.checks[0]
+                cr = c[0]
+                cc = c[1]
+                cP = self.board[cr][cc]
+                validSQ = []
+                if cP[1] == 'N':
+                    validSQ = [(cr,cc)]
+                else: 
+                    for i in range(1,8):
+                        _validSQ = (kr + c[2] * i, kc + c[3] * i)
+                        validSQ.append(_validSQ)
+                        if _validSQ[0] == cr and _validSQ[1] == cc:
+                            break
 
-        for i in range(len(moves)-1,-1,-1): #looping thru moves backwards 
-            self.makeMove(moves[i]) #foreach move, make the move
-            self.whiteMove = not self.whiteMove #swapping turns because we made a move
-            if (self.inCheck()):
-                moves.remove(moves[i]) #if they attack your king it is not a valid move
-            
-            #undoing what we changed
-            self.whiteMove = not self.whiteMove
-            self.undoMove()
-
-        if (len(moves) == 0): #either checkmate or stalemate
-            if (self.inCheck()):
-                self.checkMate = True
-                print("checkmate")
+                for i in range(len(moves)-1,-1,-1):
+                    if moves[i].piceMoved[1] != 'K':
+                        if not (moves[i].endR, moves[i].endC) in validSQ:
+                            moves.remove(moves[i])
             else:
-                self.staleMate = True
-                print("stalemate")
-        else: #in case we undo a checkmate or stalemate
-            self.checkMate = False
-            self.staleMate = False
-
-        self.enpassandt = _enpassant
-        self.currentCastleRights = _castle
+                self.getKingMoves(kr,kc,moves)
+        else:
+            moves = self.getAllMoves()
 
         return moves
+
+
+    def checkPinsAndChecks(self):
+        pins = []
+        checks = []
+        inCheck = False
+        if self.whiteMove:
+            otherC = "b"
+            allyC = "w"
+            sr = self.wKLoc[0]
+            sc = self.wKLoc[1]
+        else:
+            otherC = "w"
+            allyC = "b"
+            sr = self.bKLoc[0]
+            sc = self.bKLoc[1]
+        
+        dir = ((-1,0),(0,-1),(1,0),(0,1),(-1,-1),(-1,1),(1,-1),(1,1))
+        for j in range(len(dir)):
+            d = dir[j]
+            _pins = ()
+            for i in range(1,8):
+                endr = sr + d[0] * i
+                endc = sc + d[1] * i
+                if 0 <= endr < 8 and 0 <= endc < 8:
+                    endP = self.board[endr][endc]
+                    if endP[0] == allyC:
+                        if _pins == ():
+                            _pins = (endr,endc,d[0],d[1])
+                        else:
+                            break
+                    elif endP[0] == otherC:
+                        type = endP[1]
+
+                        if (0<=j <= 3 and type == 'R') or \
+                            (4<= j <=7 and type =='B') or \
+                            (i == 1 and type == 'P' and ((otherC == 'w' and 6 <= j <= 7) or (otherC == 'b' and 4 <= j <= 5))) or \
+                            (type == 'Q') or (i == 1 and type == 'K'):
+                            if _pins == ():
+                                inCheck = True
+                                checks.append((endr,endc,d[0],d[1]))
+                                break
+                            else:
+                                pins.append(_pins)
+                                break
+                        else:
+                            break
+                else:
+                    break
+        knightDir = ((-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1))
+        for m in knightDir:
+            endr = sr + m[0]
+            endc = sc + m[1]
+            print((endr,endc))
+            if 0 <= endr <= 7 and 0 <= endc <= 7:
+                endP = self.board[endr][endc]
+                if endP[0] == otherC and endP[1] == 'N':
+                    inCheck = True 
+                    checks.append((endr,endc,m[0],m[1]))
+
+        return inCheck , pins , checks 
+
 
     """
     Check if current player is in check
