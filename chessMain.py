@@ -1,6 +1,7 @@
 from math import fabs
 from urllib.request import HTTPPasswordMgrWithDefaultRealm
 import pygame 
+import threading
 from chessEngine import *
 from ChessAI import *
 
@@ -103,8 +104,9 @@ def main():
     sqSelected = ()
      
     #variables for AI movement
-    human = True
+    human = False
     Ai = False
+
 
     #variabler till spelloopen
     loadImgs() #Gör bara en gång 

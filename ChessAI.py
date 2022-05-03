@@ -1,6 +1,8 @@
 from asyncio.windows_events import NULL
+from audioop import reverse
 import random
 from socket import SocketIO
+
 
 pieceVal = {"K":0, "Q":9, "R":5, "B":3, "N":3, "P":1}
 Checkmate = 1000
@@ -59,6 +61,7 @@ Helper to make first recursive call to findMinMaxMove
 def findBestMove(gs,validMoves):
     global nextMove
     nextMove = None
+    validMoves = moveOrder(validMoves)
     findNegaMaxMoveAlphaBeta(gs,validMoves,DEPTH,-Checkmate,Checkmate,1 if gs.whiteMove else -1)
     return nextMove
 
@@ -114,11 +117,7 @@ def findNegaMaxMove(gs,validMoves,depth,turnMultip):
 def findNegaMaxMoveAlphaBeta(gs,validMoves,depth,alpha,beta,turnMultip):
     global nextMove
     if depth == 0:
-       return turnMultip * scoreBoard(gs)
-
-
-    #move oredering - implement
-    #validMoves = moveOrder(validMoves)
+       return turnMultip * scoreBoard(gs)   
 
     maxscore = -Checkmate
     for m in validMoves:
@@ -139,12 +138,9 @@ def findNegaMaxMoveAlphaBeta(gs,validMoves,depth,alpha,beta,turnMultip):
 
     return maxscore
 
-#def moveOrder(moves):
-    #for m in moves:
-        #if m.caputerdPiece != "--":
-           #moves.remove(m)
-           #moves.insert(0, m)
-        #elif  
+def moveOrder(moves):
+    moves.sort(key=lambda x:x.caputerdPiece != "--",reverse=True) 
+    return moves
 
 def scoreBoard(gs):  
     #white wants as big a number as possible and vice versa
@@ -156,13 +152,7 @@ def scoreBoard(gs):
     elif gs.staleMate:
         return Stalemate
 
-    score = 0  
-    for r in gs.board:
-        for c in r:
-            if c[0] == "w":
-                score += pieceVal[c[1]]
-            elif c[0] == "b":
-                score -= pieceVal[c[1]]
+    score = matScore(gs.board) + developmentScore(gs.board)
     return score 
 
 
@@ -170,11 +160,38 @@ def scoreBoard(gs):
 Apply score to board based on material
 """
 def matScore(board):
-    score = 0 #white wants as big a number as possible and vice versa 
+    score = 0 #white wants as big a number as possible and vice versa
+    BplacenemtScore = 0 
+    WplacenemtScore = 0
+    devScore = 0
     for r in board:
         for c in r:
             if c[0] == "w":
                 score += pieceVal[c[1]]
+                devScore -= WplacenemtScore 
             elif c[0] == "b":
                 score -= pieceVal[c[1]]
-    return score 
+                devScore += BplacenemtScore
+
+        if BplacenemtScore <= 0.5:
+            BplacenemtScore += 0.1
+            if BplacenemtScore == 0.3:
+                WplacenemtScore = 0.5
+        if WplacenemtScore > 0:
+            WplacenemtScore -= 0.1
+        
+    return score + devScore * 0.1
+
+def developmentScore(board): 
+    score = 0
+    placenemtScore = 0
+    for r in board:
+        for c in r:
+            if c[0] == "w":
+                score += pieceVal[c[1]] * -placenemtScore
+            elif c[0] == "b":
+                score -= pieceVal[c[1]] * placenemtScore
+        if placenemtScore < 0.5:
+            placenemtScore += 0.1
+
+    return score * 0.1
